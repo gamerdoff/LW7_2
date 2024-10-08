@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хрестики-Нулики</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #f0f2f5, #cfd8dc);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+        
+        .game-container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            font-size: 32px;
+            color: #4caf50;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-gap: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .cell {
+            width: 120px;
+            height: 120px;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+            border-radius: 10px;
+        }
+        
+        .cell:hover {
+            background-color: #bdbdbd;
+            transform: scale(1.05);
+        }
+        
+        .status-message {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #ff5722;
+        }
+        
+        .restart-btn {
+            padding: 12px 25px;
+            font-size: 18px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .restart-btn:hover {
+            background-color: #1976d2;
+            transform: translateY(-3px);
+        }
+
+        /* Стиль для виграшної лінії */
+        .win-line {
+            position: absolute;
+            height: 5px;
+            background-color: #ff5722;
+            z-index: 1;
+            transform-origin: left center;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Хрестики-Нулики</h1>
+        <div class="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <div class="status-message">Хід гравця X</div>
+        <button class="restart-btn">Почати знову</button>
+    </div>
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusMessage = document.querySelector('.status-message');
+        const restartBtn = document.querySelector('.restart-btn');
+        const board = document.querySelector('.board');
+        let currentPlayer = 'X';
+        let gameState = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+
+        const winningConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        const handleCellClick = (e) => {
+            const clickedCell = e.target;
+            const clickedIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            if (gameState[clickedIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            gameState[clickedIndex] = currentPlayer;
+            clickedCell.textContent = currentPlayer;
+
+            checkWinner();
+        };
+
+        const drawWinLine = (winCondition) => {
+            const [startIndex, , endIndex] = winCondition;
+            const startCell = cells[startIndex];
+            const endCell = cells[endIndex];
+
+            const startX = startCell.offsetLeft + startCell.offsetWidth / 2;
+            const startY = startCell.offsetTop + startCell.offsetHeight / 2;
+            const endX = endCell.offsetLeft + endCell.offsetWidth / 2;
+            const endY = endCell.offsetTop + endCell.offsetHeight / 2;
+
+            const lineLength = Math.hypot(endX - startX, endY - startY);
+            const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+            const winLine = document.createElement('div');
+            winLine.classList.add('win-line');
+            winLine.style.width = `${lineLength}px`;
+            winLine.style.transform = `rotate(${angle}deg)`;
+            winLine.style.top = `${startY}px`;
+            winLine.style.left = `${startX}px`;
+            board.appendChild(winLine);
+        };
+
+        const checkWinner = () => {
+            let roundWon = false;
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (gameState[a] === '' || gameState[b] === '' || gameState[c] === '') {
+                    continue;
+                }
+                if (gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+                    roundWon = true;
+                    drawWinLine(winningConditions[i]);
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusMessage.textContent = `Гравець ${currentPlayer} виграв!`;
+                gameActive = false;
+                return;
+            }
+
+            if (!gameState.includes('')) {
+                statusMessage.textContent = 'Нічия!';
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusMessage.textContent = `Хід гравця ${currentPlayer}`;
+        };
+
+        const restartGame = () => {
+            gameState = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            currentPlayer = 'X';
+            statusMessage.textContent = `Хід гравця ${currentPlayer}`;
+            cells.forEach(cell => cell.textContent = '');
+            const winLine = document.querySelector('.win-line');
+            if (winLine) {
+                winLine.remove();
+            }
+        };
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        restartBtn.addEventListener('click', restartGame);
+    </script>
+</body>
+</html>
